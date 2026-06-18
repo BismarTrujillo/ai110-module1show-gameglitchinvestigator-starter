@@ -14,9 +14,11 @@ Document at least 3 bugs you found. Add rows as needed.
 
 | Input | Expected Behavior | Actual Behavior | Console Output / Error |
 |-------|-------------------|-----------------|------------------------|
-| | | | |
-| | | | |
-| | | | |
+|guess of 1 |go HIGHER |go LOWER | None |
+|submit guess |secret within range|secret not within range | None |
+|Change difficulty |new range, and new secret within selected range |random secret outside of range, and no UI reflecting difficulty change |None |
+|Difficulty swap  |Hard range: 1 to 100, Normal range: 1 to 50|Normal range: 1 to 100, Hard range: 1 to 50 |None |
+|New Game button pressed | Proper game restart | No changes at all. Couldn't start a new game |None |
 
 ---
 
