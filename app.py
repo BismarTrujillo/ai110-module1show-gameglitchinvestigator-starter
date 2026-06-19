@@ -89,7 +89,7 @@ low, high = get_range_for_difficulty(difficulty)
 st.sidebar.caption(f"Range: {low} to {high}")
 st.sidebar.caption(f"Attempts allowed: {attempt_limit}")
 
-if "secret" not in st.session_state or st.session_state.get("difficulty") != difficulty:
+if "secret" not in st.session_state or st.session_state.get("secret_difficulty") != difficulty:
     st.session_state.secret = random.randint(low, high)
     st.session_state.secret_difficulty = difficulty
 
@@ -156,10 +156,7 @@ if submit:
     else:
         st.session_state.history.append(guess_int)
 
-        if st.session_state.attempts % 2 == 0:
-            secret = str(st.session_state.secret)
-        else:
-            secret = st.session_state.secret
+        secret = st.session_state.secret
 
         outcome, message = check_guess(guess_int, secret)
 
