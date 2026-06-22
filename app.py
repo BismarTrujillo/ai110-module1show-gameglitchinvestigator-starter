@@ -33,10 +33,14 @@ low, high = get_range_for_difficulty(difficulty)
 st.sidebar.caption(f"Range: {low} to {high}")
 st.sidebar.caption(f"Attempts allowed: {attempt_limit}")
 
+# FIX: Secret was never regenerated when difficulty changed mid-game.
+# AI suggested tracking secret_difficulty in session state; verified by switching difficulty and checking Debug Info.
 if "secret" not in st.session_state or st.session_state.get("secret_difficulty") != difficulty:
     st.session_state.secret = random.randint(low, high)
     st.session_state.secret_difficulty = difficulty
 
+# FIX: attempts was initialized to 1, inflating the attempt count from the first guess.
+# AI spotted this in the diff; verified by checking the "Attempts left" counter on the first load.
 if "attempts" not in st.session_state:
     st.session_state.attempts = 0
 
@@ -48,6 +52,9 @@ if "status" not in st.session_state:
 
 if "history" not in st.session_state:
     st.session_state.history = []
+
+if "last_hint" not in st.session_state:
+    st.session_state.last_hint = None
 
 st.subheader("Make a guess")
 
@@ -76,6 +83,11 @@ with col2:
 with col3:
     show_hint = st.checkbox("Show hint", value=True)
 
+if show_hint and st.session_state.last_hint:
+    st.warning(st.session_state.last_hint)
+
+# FIX: New Game only reset attempts and secret; score, status, and history carried over from the old game.
+# Also used randint(1,100) ignoring difficulty. AI refactored to use (low, high) and reset all state.
 if new_game:
     st.session_state.attempts = 0
     st.session_state.secret = random.randint(low, high)
@@ -83,6 +95,7 @@ if new_game:
     st.session_state.score = 0
     st.session_state.status = "playing"
     st.session_state.history = []
+    st.session_state.last_hint = None
     st.success("New game started.")
     st.rerun()
 
@@ -99,6 +112,8 @@ if submit:
     if not ok:
         st.error(err)
     else:
+        # FIX: attempts was incremented before validation, so invalid inputs wasted an attempt.
+        # AI moved the increment inside the else block; verified by submitting blank input and checking attempt count.
         st.session_state.attempts += 1
         st.session_state.history.append(guess_int)
 
@@ -106,8 +121,7 @@ if submit:
 
         outcome, message = check_guess(guess_int, secret)
 
-        if show_hint:
-            st.warning(message)
+        st.session_state.last_hint = message
 
         st.session_state.score = update_score(
             current_score=st.session_state.score,
@@ -116,6 +130,7 @@ if submit:
         )
 
         if outcome == "Win":
+            st.session_state.last_hint = None
             st.balloons()
             st.session_state.status = "won"
             st.success(
@@ -130,6 +145,8 @@ if submit:
                     f"The secret was {st.session_state.secret}. "
                     f"Score: {st.session_state.score}"
                 )
+            else:
+                st.rerun()
 
 st.divider()
 st.caption("Built by an AI that claims this code is production-ready.")

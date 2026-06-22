@@ -24,18 +24,23 @@ Document at least 3 bugs you found. Add rows as needed.
 
 ## 2. How did you use AI as a teammate?
 
-- Which AI tools did you use on this project (for example: ChatGPT, Gemini, Copilot)?
-- Give one example of an AI suggestion that was correct (including what the AI suggested and how you verified the result).
-- Give one example of an AI suggestion that was incorrect or misleading (including what the AI suggested and how you verified the result).
+I used Claude Code (Anthropic's AI coding assistant) throughout this project as an in-editor agent. I used it to analyze git diffs, identify bugs, generate targeted tests, and add inline documentation.
+
+**Correct AI suggestion:**
+Claude Code analyzed the git history and correctly identified that the `check_guess` function was returning a tuple `(outcome, message)`, but the starter scaffold tests were written as `assert result == "Win"` — comparing the whole tuple to a bare string. This meant the tests always would have failed, even after the bug was fixed, giving a false picture of test coverage. The AI rewrote the assertions to `outcome, _ = check_guess(...)` and `assert outcome == "Win"`. I verified this by running `pytest -v` and confirming all 14 tests passed, including the previously broken ones.
+
+**Incorrect/misleading AI suggestion:**
+Early in the session, when I asked the AI to explain what bugs existed, it initially listed the inverted direction labels (`check_guess`) and the swapped difficulty ranges as separate issues — which was accurate — but it did not immediately flag that the `update_score` win formula was also wrong (using `attempt_number + 1` instead of `attempt_number - 1`). The scoring bug was subtler and the AI only surfaced it after I asked it to look specifically at the scoring logic in the diff. This was misleading because a quick first pass suggested only two bugs, when there were actually four. I verified the scoring formula by writing `test_first_attempt_win_scores_100` and confirming that a first-attempt win correctly awards 100 points, not 80.
 
 ---
 
 ## 3. Debugging and testing your fixes
 
-- How did you decide whether a bug was really fixed?
-- Describe at least one test you ran (manual or using pytest)  
-  and what it showed you about your code.
-- Did AI help you design or understand any tests? How?
+I decided a bug was really fixed only after two things were true: the game *looked* correct when I ran it manually, and a pytest test I wrote *specifically for that bug* passed. Relying on just one of those would not have been enough — the direction labels looked fixed visually, but without a test asserting that `guess > secret` returns a message containing "LOWER", the fix could have been broken again without warning.
+
+The most revealing test was `test_too_high_always_deducts_score_on_even_attempt`. Before the fix, calling `update_score(50, "Too High", attempt_number=2)` returned `55` (adding points for a wrong guess). After the fix it returned `45`. That single assertion proved the parity branch bug was gone and that wrong guesses consistently deduct 5 points regardless of attempt number.
+
+Claude Code helped design all the targeted regression tests. I described the bugs I had found from the git diff, and the AI generated 14 tests organized into four groups — one per bug. It also explained *why* each test was structured the way it was (e.g., why `test_hard_range_larger_than_normal` is more durable than just checking for the literal tuple `(1, 100)`). That explanation helped me understand the value of testing invariants (Hard must be harder than Normal) over hardcoded values.
 
 ---
 

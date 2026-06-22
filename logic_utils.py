@@ -1,5 +1,7 @@
 def get_range_for_difficulty(difficulty: str):
     """Return (low, high) inclusive range for a given difficulty."""
+    # FIX: Hard and Normal ranges were swapped (Normal gave 1-100, Hard gave 1-50).
+    # AI identified the inversion by diffing commits; verified by checking sidebar range display in the game.
     if difficulty == "Easy":
         return 1, 20
     if difficulty == "Hard":
@@ -42,6 +44,8 @@ def check_guess(guess, secret):
         return "Win", "🎉 Correct!"
 
     try:
+        # FIX: Labels were inverted — "Too High" previously showed "Go HIGHER!" and vice versa.
+        # AI spotted it in the git diff; verified via pytest test_too_high_message_says_go_lower.
         if guess > secret:
             return "Too High", "📉 Go LOWER!"
         else:
@@ -58,11 +62,15 @@ def check_guess(guess, secret):
 def update_score(current_score: int, outcome: str, attempt_number: int):
     """Update score based on outcome and attempt number."""
     if outcome == "Win":
+        # FIX: Formula used (attempt_number + 1), cutting first-attempt wins to 80 pts instead of 100.
+        # Changed to (attempt_number - 1); verified by pytest test_first_attempt_win_scores_100.
         points = 100 - 10 * (attempt_number - 1)
         if points < 10:
             points = 10
         return current_score + points
 
+    # FIX: "Too High" on even attempts previously awarded +5 (rewarding a wrong guess).
+    # AI identified the parity branch in the diff; verified by pytest test_too_high_always_deducts_score_on_even_attempt.
     if outcome == "Too High":
         return current_score - 5
 
