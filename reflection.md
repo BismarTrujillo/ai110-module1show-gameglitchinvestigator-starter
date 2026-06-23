@@ -24,35 +24,32 @@ Document at least 3 bugs you found. Add rows as needed.
 
 ## 2. How did you use AI as a teammate?
 
-I used Claude Code (Anthropic's AI coding assistant) throughout this project as an in-editor agent. I used it to analyze git diffs, identify bugs, generate targeted tests, and add inline documentation.
+I used Claude Code for this app as an in editor agent. I used it to analyze git diffs, identify bugs, generate targeted tests, and add inline documentation
 
 **Correct AI suggestion:**
-Claude Code analyzed the git history and correctly identified that the `check_guess` function was returning a tuple `(outcome, message)`, but the starter scaffold tests were written as `assert result == "Win"` — comparing the whole tuple to a bare string. This meant the tests always would have failed, even after the bug was fixed, giving a false picture of test coverage. The AI rewrote the assertions to `outcome, _ = check_guess(...)` and `assert outcome == "Win"`. I verified this by running `pytest -v` and confirming all 14 tests passed, including the previously broken ones.
+Claude Code spotted that the starter tests used `assert result == "Win"`, but `check_guess` returns a tuple — so they would always fail. The AI rewrote them to `outcome, _ = check_guess(...)`. I verified by running `pytest -v` and seeing all 14 tests pass.
 
 **Incorrect/misleading AI suggestion:**
-Early in the session, when I asked the AI to explain what bugs existed, it initially listed the inverted direction labels (`check_guess`) and the swapped difficulty ranges as separate issues — which was accurate — but it did not immediately flag that the `update_score` win formula was also wrong (using `attempt_number + 1` instead of `attempt_number - 1`). The scoring bug was subtler and the AI only surfaced it after I asked it to look specifically at the scoring logic in the diff. This was misleading because a quick first pass suggested only two bugs, when there were actually four. I verified the scoring formula by writing `test_first_attempt_win_scores_100` and confirming that a first-attempt win correctly awards 100 points, not 80.
+On the first pass, the AI only flagged two bugs (inverted labels, swapped difficulty ranges) and missed that the `update_score` win formula was also wrong. I had to ask it to look at the scoring diff specifically before it caught the `attempt_number + 1` error. I verified the fix by writing `test_first_attempt_win_scores_100` and confirming a first-attempt win awards 100 points, not 80.
 
 ---
 
 ## 3. Debugging and testing your fixes
 
-I decided a bug was really fixed only after two things were true: the game *looked* correct when I ran it manually, and a pytest test I wrote *specifically for that bug* passed. Relying on just one of those would not have been enough — the direction labels looked fixed visually, but without a test asserting that `guess > secret` returns a message containing "LOWER", the fix could have been broken again without warning.
+A bug was only confirmed fixed when both a manual run and a targeted pytest test passed. Visual checks alone weren't enough, for example the direction labels looked correct in the UI, but a test asserting the message contains "LOWER" was the real proof.
 
-The most revealing test was `test_too_high_always_deducts_score_on_even_attempt`. Before the fix, calling `update_score(50, "Too High", attempt_number=2)` returned `55` (adding points for a wrong guess). After the fix it returned `45`. That single assertion proved the parity branch bug was gone and that wrong guesses consistently deduct 5 points regardless of attempt number.
+The most revealing test was `test_too_high_always_deducts_score_on_even_attempt`: before the fix `update_score(50, "Too High", attempt_number=2)` returned `55`; after, `45`. One assertion caught the whole parity bug.
 
-Claude Code helped design all the targeted regression tests. I described the bugs I had found from the git diff, and the AI generated 14 tests organized into four groups — one per bug. It also explained *why* each test was structured the way it was (e.g., why `test_hard_range_larger_than_normal` is more durable than just checking for the literal tuple `(1, 100)`). That explanation helped me understand the value of testing invariants (Hard must be harder than Normal) over hardcoded values.
+Claude generated all 14 tests grouped by bug, and explained why testing invariants is more durable than checking values.
 
 ---
 
 ## 4. What did you learn about Streamlit and state?
 
-- How would you explain Streamlit "reruns" and session state to a friend who has never used Streamlit?
+Every time user clicks a button or changes an input, streamlit reruns the entire page from top to bottom. Any variable defined normally gets reset on every rerun. `st.session_state` is a dictionary that survives those reruns, so it's the only way to remember things like the secret number. Most bugs in this project came from not initializing or updating session state correctly.
 
 ---
 
 ## 5. Looking ahead: your developer habits
 
-- What is one habit or strategy from this project that you want to reuse in future labs or projects?
-  - This could be a testing habit, a prompting strategy, or a way you used Git.
-- What is one thing you would do differently next time you work with AI on a coding task?
-- In one or two sentences, describe how this project changed the way you think about AI generated code.
+I'll write a regression test right after every fix so bugs can't silently return. Next time I'll ask the AI for a full diff review in one prompt, that'd have caught all four bugs at once instead of finding the scoring bug only after a follow-up. This project taught me to treat AI code as a first draft: it looked right and had tests, but both had hidden errors that only appeared under real inputs.

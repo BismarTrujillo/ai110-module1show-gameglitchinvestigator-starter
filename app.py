@@ -33,14 +33,15 @@ low, high = get_range_for_difficulty(difficulty)
 st.sidebar.caption(f"Range: {low} to {high}")
 st.sidebar.caption(f"Attempts allowed: {attempt_limit}")
 
-# FIX: Secret was never regenerated when difficulty changed mid-game.
-# AI suggested tracking secret_difficulty in session state; verified by switching difficulty and checking Debug Info.
+#FIX: Secret was never regenerated when difficulty changed mid-game
+#AI suggested tracking secret_difficulty in session state verified by switching difficulty 
+#and checking Debug Info.
 if "secret" not in st.session_state or st.session_state.get("secret_difficulty") != difficulty:
     st.session_state.secret = random.randint(low, high)
     st.session_state.secret_difficulty = difficulty
 
-# FIX: attempts was initialized to 1, inflating the attempt count from the first guess.
-# AI spotted this in the diff; verified by checking the "Attempts left" counter on the first load.
+#FIX: attempts was initialized to 1, inflating the attempt count from the first guess.
+#AI spotted this in the diff; verified by checking the "Attempts left" counter on the first load.
 if "attempts" not in st.session_state:
     st.session_state.attempts = 0
 
@@ -86,8 +87,8 @@ with col3:
 if show_hint and st.session_state.last_hint:
     st.warning(st.session_state.last_hint)
 
-# FIX: New Game only reset attempts and secret; score, status, and history carried over from the old game.
-# Also used randint(1,100) ignoring difficulty. AI refactored to use (low, high) and reset all state.
+#FIX: New Game only reset attempts and secret, score, status, and history carried over from the old game.
+#Also used randint(1,100) ignoring difficulty. AI refactored to use (low, high) and reset all state.
 if new_game:
     st.session_state.attempts = 0
     st.session_state.secret = random.randint(low, high)
@@ -112,8 +113,8 @@ if submit:
     if not ok:
         st.error(err)
     else:
-        # FIX: attempts was incremented before validation, so invalid inputs wasted an attempt.
-        # AI moved the increment inside the else block; verified by submitting blank input and checking attempt count.
+        #FIX: attempts was incremented before validation, so invalid inputs wasted an attempt.
+        #AI moved the increment inside the else block; verified by submitting blank input and checking attempt count.
         st.session_state.attempts += 1
         st.session_state.history.append(guess_int)
 
